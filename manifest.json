@@ -1,0 +1,26 @@
+{
+  "name": "麻將戰國列傳",
+  "short_name": "戰國麻將",
+  "description": "以麻將之術縱橫戰國，征服六合，一統天下！",
+  "start_url": "/dila-mj/",
+  "scope": "/dila-mj/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#c9993a",
+  "background_color": "#0d0700",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# 日期備份檔（手動備份，不納入 git）
+戰國麻將列傳_*.html
+*.bak
+
+# macOS
+.DS_Store
+
+# 開發工具
+*.py
+*.pptx
