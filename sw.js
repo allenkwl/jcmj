@@ -1,7 +1,7 @@
 // 麻將戰國列傳 — Service Worker
 // 版本號由 index.html 在安裝時動態傳入（時間戳記），
 // 因此每次上傳新版 index.html 後，使用者都會自動取得最新內容。
-let CACHE_NAME = 'dila-mj-v1'; // 預設值，會被 index.html 覆蓋
+let CACHE_NAME = 'dila-mj-v2'; // 預設值，會被 index.html 覆蓋
 
 const ASSETS = [
   '/dila-mj/',
