@@ -1,13 +1,13 @@
 // 麻將戰國列傳 — Service Worker
 // 策略：HTML 永遠從網路取得（保證最新版），靜態資源快取加速
 // BUILD: 20260624_1245
-const CACHE_NAME = 'dila-mj-v3';
+const CACHE_NAME = 'jcmj-v3';
 
 // 只快取不常變動的靜態資源
 const STATIC_ASSETS = [
-  '/dila-mj/icon-192.png',
-  '/dila-mj/icon-512.png',
-  '/dila-mj/manifest.json',
+  '/jcmj/icon-192.png',
+  '/jcmj/icon-512.png',
+  '/jcmj/manifest.json',
 ];
 
 // ── 安裝：預先快取靜態資源 ──────────────────────────────────────
@@ -41,8 +41,8 @@ self.addEventListener('fetch', event => {
   // HTML 文件：永遠走網路，失敗時才用快取（保證更新能到達使用者）
   if (event.request.destination === 'document' ||
       url.pathname.endsWith('.html') ||
-      url.pathname === '/dila-mj/' ||
-      url.pathname === '/dila-mj') {
+      url.pathname === '/jcmj/' ||
+      url.pathname === '/jcmj') {
     // cache: 'reload' 繞過瀏覽器 HTTP cache，確保真正從伺服器取得最新版
     event.respondWith(
       fetch(new Request(event.request, { cache: 'reload' })).then(response => {
@@ -51,7 +51,7 @@ self.addEventListener('fetch', event => {
         return response;
       }).catch(() => {
         // 離線時才用快取
-        return caches.match(event.request) || caches.match('/dila-mj/');
+        return caches.match(event.request) || caches.match('/jcmj/');
       })
     );
     return;
