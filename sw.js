@@ -43,9 +43,9 @@ self.addEventListener('fetch', event => {
       url.pathname.endsWith('.html') ||
       url.pathname === '/dila-mj/' ||
       url.pathname === '/dila-mj') {
+    // cache: 'reload' 繞過瀏覽器 HTTP cache，確保真正從伺服器取得最新版
     event.respondWith(
-      fetch(event.request).then(response => {
-        // 順便更新快取
+      fetch(new Request(event.request, { cache: 'reload' })).then(response => {
         const toCache = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, toCache));
         return response;
