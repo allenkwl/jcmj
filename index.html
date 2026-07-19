@@ -650,8 +650,10 @@ canvas.tc.meld{cursor:default;}
   .tr{ gap:1px !important; min-height:30px !important; }
   .dr{ gap:1px !important; min-height:12px !important; }
 
-  /* 玩家棄牌隱藏（空間不夠）*/
-  #pd-zone{ display:none !important; }
+  /* 玩家棄牌：縮小顯示（牌18px、限一行高、超出隱藏） */
+  #pd-zone{ display:block !important; }
+  #pd{ max-height:27px !important; overflow:hidden !important; }
+  #pd canvas{ width:18px !important; height:25px !important; }
 
   /* 對局日誌壓到最小 */
   .mlog{ max-height:2vh !important; font-size:9px !important; }
@@ -1502,8 +1504,8 @@ function applyScale(){
     const saR = parseFloat(rs.getPropertyValue('--sai-r')) || 0;
     playW = vw - saL - saR - 80 - 16;
     tileByW = Math.floor((playW - 13) / 14) - (SIDE + 2);
-    tileByH = Math.floor((vh * 0.18) / 1.37);
-    tileSize = Math.max(26, Math.min(tileByW, tileByH, 46));
+    tileByH = Math.floor((vh * 0.15) / 1.37);
+    tileSize = Math.max(26, Math.min(tileByW, tileByH, 40));
   } else {
     // 桌機
     playW = vw - 220;
@@ -1552,8 +1554,8 @@ function applyScale(){
     }
   }
 
-  // Tile row min-height（小高度減少 hover 預留空間）
-  const trExtra = (!mobile && vh <= 720) ? 4 : 10;
+  // Tile row min-height（手機無 hover 浮起，不需預留；小高度桌機減少預留）
+  const trExtra = mobile ? 2 : (vh <= 720 ? 4 : 10);
   document.querySelectorAll('.tr').forEach(r=>{
     r.style.minHeight = (TH + trExtra) + 'px';
   });
@@ -7440,7 +7442,7 @@ function updateKingAvatars(){
 <script>
 (function(){
   // BUILD_TS 會在每次存檔時自動更新，讓 SW 知道要清除舊快取
-  const BUILD_TS = '20260719_1530';
+  const BUILD_TS = '20260719_1536';
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
@@ -7797,6 +7799,6 @@ function updateKingAvatars(){
   document.getElementById('boss-screen').addEventListener('click', _hideBoss);
 })();
 </script>
-<div id="ver-badge">V1.25</div>
+<div id="ver-badge">V1.26</div>
 </body>
 </html>
