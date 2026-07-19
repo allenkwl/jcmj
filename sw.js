@@ -1,7 +1,7 @@
 // 麻將戰國列傳 — Service Worker
 // 策略：HTML 永遠從網路取得（保證最新版），靜態資源快取加速
 // BUILD: 20260719_1516
-const CACHE_NAME = 'jcmj-v3';
+const CACHE_NAME = 'jcmj-v4';
 
 // 只快取不常變動的靜態資源
 const STATIC_ASSETS = [
