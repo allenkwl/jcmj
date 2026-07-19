@@ -5,8 +5,8 @@
   "start_url": "/jcmj/",
   "scope": "/jcmj/",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "theme_color": "#c9993a",
+  "orientation": "landscape",
+  "theme_color": "#0d0700",
   "background_color": "#0d0700",
   "lang": "zh-TW",
   "icons": [
