@@ -616,8 +616,8 @@ canvas.tc.meld{cursor:default;}
   }
 }
 
-/* 橫式手機：保留側欄但縮窄 */
-@media (max-width: 900px) and (orientation:landscape) and (max-height:500px){
+/* 橫式手機：保留側欄但縮窄（觸控裝置限定，iPhone 橫式寬度可達 932px 故不設寬度上限） */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:500px){
   /* ── 橫式手機遊戲主畫面 ── */
 
   /* 瀏海/Dynamic Island 安全區（需 viewport-fit=cover） */
@@ -705,6 +705,30 @@ canvas.tc.meld{cursor:default;}
 @keyframes rp-rotate{
   0%,20%{transform:rotate(0deg);}
   60%,100%{transform:rotate(90deg);}
+}
+
+/* ── 觸控裝置通用：鍵盤提示無意義，一律隱藏 ── */
+@media (pointer:coarse){
+  .kb-hint{ display:none !important; }
+}
+
+/* ── 動態視窗高度：iOS Safari 的 100vh 含工具列，改用 dvh（桌機 dvh=vh 無影響） ── */
+@supports (height:100dvh){
+  #title-screen, #title-content{ min-height:100dvh; }
+}
+
+/* ── 橫式手機：標題畫面壓縮（視窗高度僅 ~300-430px，需全部塞進一屏） ── */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:500px){
+  #title-screen{ overflow-y:auto !important; }
+  #title-top{ padding:8px 16px 2px !important; }
+  #title-bot{ padding:6px 16px 12px !important; }
+  .tdeco{ font-size:10px !important; margin-bottom:2px !important; }
+  .mtitle{ font-size:clamp(32px,9vh,52px) !important; line-height:1.1 !important; }
+  .stitle{ font-size:9px !important; letter-spacing:3px !important; }
+  .stxt{ font-size:11px !important; line-height:1.6 !important; margin-bottom:8px !important; }
+  #start-journey-btn{ padding:8px 32px !important; font-size:16px !important; }
+  #title-lb-btn{ font-size:10px !important; }
+  #title-bot > div[style*="margin-top"]{ margin-top:4px !important; }
 }
 
 /* ── 橫式選國畫面 ── */
@@ -1412,7 +1436,9 @@ function _updateFSBtn(){
   document.getElementById('fs-label').textContent = isFullscreen() ? '離開' : '全螢幕';
 }
 
-const _isMobile = ()=> window.innerWidth < 768 && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+// 觸控裝置 + 短邊 < 500px 即視為手機（橫式 iPhone 寬度可達 932px，不能只看寬度）
+const _isMobile = ()=> ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  && Math.min(window.innerWidth, window.innerHeight) < 500;
 // iOS 不支援 Fullscreen API，全螢幕按鈕對 iOS 無意義
 const _isIOS = ()=> /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -7378,7 +7404,7 @@ function updateKingAvatars(){
 <script>
 (function(){
   // BUILD_TS 會在每次存檔時自動更新，讓 SW 知道要清除舊快取
-  const BUILD_TS = '20260719_1432';
+  const BUILD_TS = '20260719_1439';
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
@@ -7735,6 +7761,6 @@ function updateKingAvatars(){
   document.getElementById('boss-screen').addEventListener('click', _hideBoss);
 })();
 </script>
-<div id="ver-badge">V1.20</div>
+<div id="ver-badge">V1.21</div>
 </body>
 </html>
