@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c9993a">
@@ -106,10 +106,13 @@ canvas#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
 .zl strong{color:var(--gold);}
 .tr{display:flex;flex-wrap:wrap;gap:3px;min-height:50px;align-items:flex-end;}
 canvas.tc{cursor:pointer;flex-shrink:0;transition:transform .15s;border-radius:3px;}
-canvas.tc:hover{transform:translateY(-8px);}
+/* hover 浮起只在滑鼠裝置生效，避免 iOS 觸控黏住 hover 狀態 */
+@media (hover:hover){
+  canvas.tc:hover{transform:translateY(-8px);}
+  canvas.tc.meld:hover{transform:none;}
+}
 canvas.tc.sel{transform:translateY(-15px);filter:drop-shadow(0 0 5px #e74c3c);}
 canvas.tc.meld{cursor:default;}
-canvas.tc.meld:hover{transform:none;}
 /* 手牌按鍵標籤 wrapper */
 .ph-tile-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0;}
 .ph-key-label{font-size:9px;font-family:monospace;color:rgba(245,230,200,.32);
@@ -617,6 +620,16 @@ canvas.tc.meld:hover{transform:none;}
 @media (max-width: 900px) and (orientation:landscape) and (max-height:500px){
   /* ── 橫式手機遊戲主畫面 ── */
 
+  /* 瀏海/Dynamic Island 安全區（需 viewport-fit=cover） */
+  #game-screen{
+    padding-left:max(6px, env(safe-area-inset-left)) !important;
+    padding-right:max(6px, env(safe-area-inset-right)) !important;
+  }
+  #sel-screen, #title-screen{
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+  }
+
   /* sidebar 顯示回來但極窄 */
   .binfo{
     display:flex !important;
@@ -672,6 +685,26 @@ canvas.tc.meld:hover{transform:none;}
   /* 底部資訊列在橫式收起 */
   #mobile-info-bar{ display:none !important; }
   body.is-mobile #game-screen{ padding-bottom:0 !important; }
+}
+
+/* ── 手機直式：請旋轉手機引導頁 ── */
+#rotate-prompt{display:none;}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:767px){
+  #rotate-prompt{
+    display:flex;position:fixed;inset:0;z-index:99999;
+    flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    background:#0d0700;color:var(--parch);text-align:center;padding:32px;
+  }
+  #rotate-prompt .rp-icon{
+    font-size:64px;
+    animation:rp-rotate 1.8s ease-in-out infinite;
+  }
+  #rotate-prompt .rp-title{font-size:20px;font-weight:700;color:var(--gold);letter-spacing:4px;}
+  #rotate-prompt .rp-sub{font-size:13px;color:rgba(245,230,200,.6);letter-spacing:2px;line-height:1.8;}
+}
+@keyframes rp-rotate{
+  0%,20%{transform:rotate(0deg);}
+  60%,100%{transform:rotate(90deg);}
 }
 
 /* ── 橫式選國畫面 ── */
@@ -1408,7 +1441,7 @@ function applyScale(){
     playW = vw - 120;
     tileByW = Math.floor(playW / 15);
     tileByH = Math.floor((vh * 0.18) / 1.37);
-    tileSize = Math.max(28, Math.min(tileByW, tileByH, 46));
+    tileSize = Math.max(28, Math.min(tileByW, tileByH, 52));
   } else {
     // 桌機
     playW = vw - 220;
@@ -1435,7 +1468,8 @@ function applyScale(){
     game.style.position  = 'relative';
     game.style.left = game.style.top = '';
     game.style.width     = '100vw';
-    game.style.height    = '100vh';
+    // 手機用實際視窗高度：iOS Safari 的 100vh 含網址列，會遮住底部手牌
+    game.style.height    = mobile ? vh + 'px' : '100vh';
     game.style.minHeight = '';
     const gamePad = (mobile && !landscape) ? Math.round(vh*0.004) : Math.round(vh*0.008);
     const gamePadB = (mobile && !landscape) ? 32 : Math.round(vh*0.008); // 直式留底部資訊列空間
@@ -7344,7 +7378,7 @@ function updateKingAvatars(){
 <script>
 (function(){
   // BUILD_TS 會在每次存檔時自動更新，讓 SW 知道要清除舊快取
-  const BUILD_TS = '20260624_1331';
+  const BUILD_TS = '20260719_1432';
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
@@ -7372,6 +7406,12 @@ function updateKingAvatars(){
   }
 })();
 </script>
+<!-- 手機直式引導頁 -->
+<div id="rotate-prompt">
+  <div class="rp-icon">📱</div>
+  <div class="rp-title">請將手機轉為橫式</div>
+  <div class="rp-sub">戰國麻將採用橫式介面<br>請關閉直向鎖定後旋轉手機</div>
+</div>
 <!-- Boss Screen Overlay -->
 <div id="boss-screen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:999999;flex-direction:column;background:#f0f0f0;font-family:'微軟正黑體','Microsoft JhengHei',Arial,sans-serif;font-size:12px;user-select:none;">
   <!-- Title Bar -->
@@ -7695,6 +7735,6 @@ function updateKingAvatars(){
   document.getElementById('boss-screen').addEventListener('click', _hideBoss);
 })();
 </script>
-<div id="ver-badge">V1.19</div>
+<div id="ver-badge">V1.20</div>
 </body>
 </html>
