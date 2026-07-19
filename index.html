@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#c9993a">
+<meta name="theme-color" content="#0d0700">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -7404,7 +7404,7 @@ function updateKingAvatars(){
 <script>
 (function(){
   // BUILD_TS 會在每次存檔時自動更新，讓 SW 知道要清除舊快取
-  const BUILD_TS = '20260719_1439';
+  const BUILD_TS = '20260719_1444';
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
@@ -7761,6 +7761,6 @@ function updateKingAvatars(){
   document.getElementById('boss-screen').addEventListener('click', _hideBoss);
 })();
 </script>
-<div id="ver-badge">V1.21</div>
+<div id="ver-badge">V1.22</div>
 </body>
 </html>
