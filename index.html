@@ -18,7 +18,8 @@
 /* 字體：主標題用 Noto Serif TC 900（繁體楷書感），其他書法標題用 ZCOOL QingKe HuangYou，內文用 Noto Serif TC */
 :root{ --font-brush: 'ZCOOL QingKe HuangYou','Noto Serif TC',serif; --font-body: 'Noto Serif TC',serif; --font-ui: 'Noto Sans TC','Noto Serif TC',sans-serif; }
 :root{--ink:#1a0a00;--parch:#f5e6c8;--red:#c0392b;--gold:#c9993a;--tile-face:#fdf3e3;}
-:root{--sai-l:env(safe-area-inset-left,0px);--sai-r:env(safe-area-inset-right,0px);} /* JS 讀取用 */
+:root{--sai-l:env(safe-area-inset-left,0px);--sai-r:env(safe-area-inset-right,0px);
+  --sai-t:env(safe-area-inset-top,0px);--sai-b:env(safe-area-inset-bottom,0px);} /* JS 讀取用 */
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0d0700;font-family:'Noto Serif TC',serif;color:var(--parch);min-height:100vh;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-action:pan-x pan-y;}
 html{overflow:hidden;}
@@ -892,8 +893,18 @@ body.float-av .king-name-label{ display:none !important; }
     max-height:27px !important; min-height:27px !important; gap:1px !important;
   }
   #od canvas,#pd canvas{ width:18px !important; height:25px !important; }
-  /* 敵方棄牌右側讓出浮動頭像帶 */
+  /* 敵方棄牌與牌山列右側都要讓出浮動頭像帶，否則「我方回合」徽章會被頭像蓋住 */
   #od{ padding-right:58px !important; }
+  .pb{ padding-right:58px !important; }
+  /* 對局日誌原本壓到 10px，字被裁掉一半；給足一整行 */
+  .mlog{
+    max-height:18px !important; font-size:8px !important;
+    line-height:1.5 !important; padding:1px 6px !important;
+  }
+  /* 80px 側欄放不下長句，原本被逐字斷成直排。技能說明改由操作列的技能鈕呈現 */
+  .binfo{ white-space:nowrap !important; }
+  #skill-badge{ display:none !important; }
+  .binfo > div:last-child{ display:none !important; }
   /* 六條區塊標籤原本合計吃掉近 94px（375px 高的螢幕上佔 25%）。
      兩個「副露」「棄牌」標籤帶 inline margin-top:5px/3px，需要 !important 才壓得下 */
   .zl{
@@ -909,6 +920,10 @@ body.float-av .king-name-label{ display:none !important; }
   .ab{ padding:3px 6px !important; font-size:9px !important; }
   #od,#pd{ max-height:22px !important; min-height:22px !important; }
   #od canvas,#pd canvas{ width:15px !important; height:21px !important; }
+  /* 再讓出約 7px 緩衝：實機字體渲染可能比桌面瀏覽器高 1–2px，
+     667×375 滿載時原本只剩 1px 餘裕 */
+  #om canvas{ width:22px !important; height:33px !important; }
+  #pm canvas{ width:24px !important; height:36px !important; }
 }
 
 /* ── ④ 桌機：棄牌列限行數 ──────────────────────────────────────────
@@ -998,6 +1013,12 @@ body:not(.is-mobile):not(.is-tablet) #pd{
   #od canvas,#pd canvas{ width:15px !important; height:21px !important; }
   #od{ padding-right:56px !important; }
   .zl{ font-size:9px !important; margin-top:2px !important; margin-bottom:1px !important; }
+  /* 日誌原本被 max-width:767px 區塊的 max-height:3vh !important 壓成 25px，
+     剛好把第二行切一半；這裡用同等 !important 蓋掉，給足兩整行
+     （42px = 2×16px 行高 + padding 4 + border 2，box-sizing 為 border-box） */
+  .mlog{ max-height:42px !important; line-height:1.6 !important; padding:2px 8px !important; }
+  /* 底部資訊列避開 Home indicator */
+  #mobile-info-bar{ padding-bottom:max(6px, env(safe-area-inset-bottom,0px)) !important; }
 }
 
 /* ── ② 平板橫式（iPad）：君主立繪欄保留但縮到 170px ── */
@@ -1023,6 +1044,18 @@ body:not(.is-mobile):not(.is-tablet) #pd{
   /* 棄牌：兩行可捲（iPad 高度充裕） */
   #od,#pd{ max-height:70px !important; overflow-y:auto !important; gap:2px !important; }
   #od canvas,#pd canvas{ width:24px !important; height:33px !important; }
+}
+
+/* ── ②-c 窄視窗平板橫式（iPad 分割視窗 Split View）────────────────
+   寬度 <768px 時 max-width:767px 那段會把君主立繪隱藏，
+   但 ② 仍保留 170px 欄位 → 白留一整欄。此時把欄位收掉還給手牌。 */
+@media (pointer:coarse) and (hover:none) and (orientation:landscape)
+   and (min-height:501px) and (max-height:1024px) and (max-width:767px){
+  .mja{
+    grid-template-columns:1fr !important;
+    grid-template-areas:"oz" "pb" "pz" "ab" "ml" !important;
+    column-gap:0 !important;
+  }
 }
 
 /* ── ②-b 矮螢幕平板橫式（短邊 501–700px 的小平板）── */
@@ -1832,7 +1865,9 @@ function _placeFloatAvatars(){
   oav.style.right = '4px';
   oav.style.top   = Math.max(2, (ozr ? ozr.top - r.top : 0) + 6) + 'px';
   pav.style.right = '4px';
-  pav.style.top   = (pbr ? Math.round(pbr.top - r.top + pbr.height/2 - d/2)
+  // 底緣對齊牌山列底緣：頭像往上溢出到敵方棄牌那一帶（該列已用 padding-right 讓位），
+  // 就不會壓到下方的手牌。置中的話橫式（牌山列僅 ~28px 高）會蓋住第 14 張牌。
+  pav.style.top   = (pbr ? Math.round(pbr.bottom - r.top - d - 2)
                          : Math.round(r.height/2 - d/2)) + 'px';
 }
 
@@ -1908,7 +1943,17 @@ function applyScale(){
     game.style.minHeight = '';
     const gamePad = (mobile && !landscape) ? Math.round(vh*0.004) : Math.round(vh*0.008);
     const gamePadB = (mobile && !landscape) ? 32 : Math.round(vh*0.008); // 直式留底部資訊列空間
-    game.style.padding = `${gamePad}px ${Math.round(vw*0.006)}px ${gamePadB}px`;
+    const sidePad  = Math.round(vw*0.006);
+    if(touchUI && !landscape){
+      // 直式要避開瀏海／Dynamic Island 與 Home indicator。
+      // 橫式是用 CSS 的 padding-left/right + env() 處理，但這裡 JS 設的是 padding 簡寫、
+      // 會整個蓋掉 CSS，所以直接在 inline style 內用 calc() + env() 才可靠
+      game.style.padding = `calc(${gamePad}px + env(safe-area-inset-top, 0px)) `
+                         + `${sidePad}px `
+                         + `calc(${gamePadB}px + env(safe-area-inset-bottom, 0px))`;
+    } else {
+      game.style.padding = `${gamePad}px ${sidePad}px ${gamePadB}px`;
+    }
     game.style.overflow  = 'hidden';
   }
 
@@ -1940,7 +1985,9 @@ function applyScale(){
   const logEl = document.querySelector('.mlog');
   if(logEl){
     let logH;
-    if(mobile)      logH = landscape ? 10 : Math.round(vh * 0.03);
+    // box-sizing 是 border-box，需含 padding 4px + border 2px
+    // 橫式 18px = 一整行（12px）；直式 42px = 兩整行（2×16px）
+    if(mobile)      logH = landscape ? 18 : 42;
     else if(tablet) logH = landscape ? 50 : 44;
     else            logH = Math.round(vh * (vh <= 720 ? 0.04 : 0.08));
     logEl.style.maxHeight = logH + 'px';
