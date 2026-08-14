@@ -896,10 +896,16 @@ body.float-av .king-name-label{ display:none !important; }
   /* 敵方棄牌與牌山列右側都要讓出浮動頭像帶，否則「我方回合」徽章會被頭像蓋住 */
   #od{ padding-right:58px !important; }
   .pb{ padding-right:58px !important; }
-  /* 對局日誌原本壓到 10px，字被裁掉一半；給足一整行 */
+  /* 對局日誌：原本壓到 10px、又沿用 clamp(10px,1vw,12px) 的字級，字被外框裁掉。
+     橫式滿載尚有約 26px 餘裕，故選擇把框加高而非把字縮小（8px 中文太小）。
+     字級對齊操作列按鈕（.abar .ab）的 10px、行高 1.4（14px）。
+     框高取「剛好一行」：14 + padding 4 + border 2 = 20px。
+     若給 26px，內容區 20px 除以 14px 行高等於 1.43 行，
+     會露出上一行的半截，看起來就像字被外框裁掉。
+     訊息本身仍可捲動，最新一行永遠完整顯示。 */
   .mlog{
-    max-height:18px !important; font-size:8px !important;
-    line-height:1.5 !important; padding:1px 6px !important;
+    max-height:20px !important; font-size:10px !important;
+    line-height:1.4 !important; padding:2px 6px !important;
   }
   /* 80px 側欄放不下長句，原本被逐字斷成直排。技能說明改由操作列的技能鈕呈現 */
   .binfo{ white-space:nowrap !important; }
@@ -2012,8 +2018,8 @@ function applyScale(){
   if(logEl){
     let logH;
     // box-sizing 是 border-box，需含 padding 4px + border 2px
-    // 橫式 18px = 一整行（12px）；直式 42px = 兩整行（2×16px）
-    if(mobile)      logH = landscape ? 18 : 42;
+    // 橫式 20px = 剛好一整行（10px 字、14px 行高）；直式 42px = 兩整行（2×16px）
+    if(mobile)      logH = landscape ? 20 : 42;
     else if(tablet) logH = landscape ? 50 : 44;
     else            logH = Math.round(vh * (vh <= 720 ? 0.04 : 0.08));
     logEl.style.maxHeight = logH + 'px';
