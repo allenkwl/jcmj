@@ -692,7 +692,9 @@ canvas.tc.meld{cursor:default;}
 
 /* ── 手機直式：請旋轉手機引導頁 ── */
 #rotate-prompt{display:none;}
-@media (orientation:portrait) and (pointer:coarse) and (max-width:767px){
+/* V1.27：手機與 iPad 直式都已有專屬版面（手機直式手牌排成 7×2），
+   旋轉提示只留給極窄裝置（<320px）當保險，一般情況不再出現 */
+@media (orientation:portrait) and (pointer:coarse) and (max-width:319px){
   #rotate-prompt{
     display:flex;position:fixed;inset:0;z-index:99999;
     flex-direction:column;align-items:center;justify-content:center;gap:18px;
@@ -821,6 +823,243 @@ canvas.tc.meld{cursor:default;}
   z-index:190;background:rgba(0,0,0,.85);border:1px solid rgba(180,100,255,.6);
   color:#d4a8ff;font-family:'Noto Serif TC',serif;font-size:18px;letter-spacing:3px;
   padding:16px 36px;border-radius:6px;text-align:center;pointer-events:none;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   V1.27　觸控裝置版面修正
+   置於樣式表最末，才能覆蓋前面 (min-width:768px) and (max-height:720px)
+   那段桌機規則（iPad 與橫式手機都會同時命中該段）
+   裝置分層以「短邊」為準：≤500 手機、501–1024 平板、其餘桌機
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 共用：所有觸控裝置 ── */
+@media (pointer:coarse) and (hover:none){
+  /* 沒有實體鍵盤，手牌下方的數字標籤純佔空間 */
+  .ph-key-label{ display:none !important; }
+  .ph-tile-wrap{ gap:0 !important; }
+  /* 手牌一律不換行；牌寬由 JS 依 #ph 實測寬度反推（見 _fitHandTiles） */
+  #ph{ flex-wrap:nowrap !important; }
+  #om,#pm{ flex-wrap:nowrap !important; }
+  /* 敵方手牌與副露的牌經 CSS 縮小，不需再預留整張牌高 */
+  #oh,#om,#pm{ min-height:0 !important; }
+  /* 棄牌可捲動，被擠出畫面的牌不會遺失 */
+  #od,#pd{ overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+  /* 浮動頭像的定位基準 */
+  .mja{ position:relative; }
+}
+
+/* ── 浮動頭像模式（手機橫式 + 平板直式共用）── */
+body.float-av #opp-avatar-frame,
+body.float-av #player-avatar-frame{
+  position:absolute !important;
+  width:var(--av-d,50px) !important; height:var(--av-d,50px) !important;
+  min-width:0 !important; padding:0 !important; gap:0 !important;
+  align-self:auto !important; display:flex !important;
+  border-radius:50% !important; overflow:hidden;
+  background:rgba(10,5,0,.55) !important;
+  z-index:60; pointer-events:none;
+}
+body.float-av #opp-avatar-wrap,
+body.float-av #player-avatar-wrap{ width:100%; height:100%; gap:0 !important; }
+body.float-av #player-avatar-frame .king-avatar,
+body.float-av #opp-avatar-frame .king-avatar{
+  width:100% !important; height:100% !important;
+  object-fit:cover; object-position:center top; border-radius:50%;
+}
+body.float-av .king-name-label{ display:none !important; }
+
+/* ── ① 手機橫式：頭像脫離 grid，手牌拿回全寬 ── */
+@media (pointer:coarse) and (hover:none) and (orientation:landscape) and (max-height:500px){
+  /* 窄橫式手機（iPhone SE/8 橫式 667px）會同時命中 max-width:767px 那段，
+     被改成 flex-direction:column，側欄於是橫躺在上方白吃 80px 高度 */
+  .map{ flex-direction:row !important; }
+  /* 牌山預覽的 6 張背面牌用的是 36×50，在手機上白佔 45px 高 */
+  #pp canvas{ width:14px !important; height:19px !important; }
+  #pp{ gap:1px !important; }
+  .mja{
+    grid-template-columns:1fr !important;
+    grid-template-areas:"oz" "pb" "pz" "ab" "ml" !important;
+    column-gap:0 !important; row-gap:2px !important;
+  }
+  /* 副露：原本完全沒有手機規則，兩排滿尺寸牌吃掉 124px 高 */
+  #om canvas{ width:24px !important; height:36px !important; }
+  #pm canvas{ width:27px !important; height:40px !important; }
+  #om,#pm{ gap:1px !important; }
+  #om .mgap,#pm .mgap{ width:5px !important; }
+  /* 棄牌：單行、橫向可捲 */
+  #od,#pd{
+    flex-wrap:nowrap !important; overflow-x:auto !important; overflow-y:hidden !important;
+    max-height:27px !important; min-height:27px !important; gap:1px !important;
+  }
+  #od canvas,#pd canvas{ width:18px !important; height:25px !important; }
+  /* 敵方棄牌右側讓出浮動頭像帶 */
+  #od{ padding-right:58px !important; }
+  /* 六條區塊標籤原本合計吃掉近 94px（375px 高的螢幕上佔 25%）。
+     兩個「副露」「棄牌」標籤帶 inline margin-top:5px/3px，需要 !important 才壓得下 */
+  .zl{
+    font-size:8px !important; letter-spacing:1px !important; line-height:1.15 !important;
+    margin-top:1px !important; margin-bottom:0 !important;
+  }
+}
+
+/* ── ①-b 矮螢幕手機橫式（iPhone SE / 8 橫式高度僅 375px）── */
+@media (pointer:coarse) and (hover:none) and (orientation:landscape) and (max-height:400px){
+  /* 滿載（4 副露 + 雙方棄牌全滿）時仍要塞進一屏，這裡再擠出約 29px */
+  .mlog{ display:none !important; }
+  .ab{ padding:3px 6px !important; font-size:9px !important; }
+  #od,#pd{ max-height:22px !important; min-height:22px !important; }
+  #od canvas,#pd canvas{ width:15px !important; height:21px !important; }
+}
+
+/* ── ④ 桌機：棄牌列限行數 ──────────────────────────────────────────
+   桌機的 #od/#pd 沒有任何 max-height，44 張棄牌會排成 2–3 行（每行 50px）。
+   1280×800 滿載時把 .abar 推到 y=850，再被 .mja 的 overflow:hidden 裁掉，
+   棄牌／胡牌／槓／認輸整排按鈕變成點不到。改為限行數並可捲動。
+   （is-mobile / is-tablet 由 applyScale() 掛上，兩者都不套用此規則） */
+body:not(.is-mobile):not(.is-tablet) #od,
+body:not(.is-mobile):not(.is-tablet) #pd{
+  max-height:104px; overflow-y:auto; overscroll-behavior:contain;
+}
+@media (max-height:900px){
+  /* 1280×800、1366×768 等筆電高度：只給一行，才留得住操作列與對局日誌 */
+  body:not(.is-mobile):not(.is-tablet) #od,
+  body:not(.is-mobile):not(.is-tablet) #pd{ max-height:52px; }
+}
+
+/* ── ④-b 桌機 721–820px 高度帶（1366×768、1280×800 筆電）────────────
+   原本只有 max-height:720px 那段會壓縮，721–820 這一帶完全沒有規則，
+   滿載時對局日誌（.mlog）會被 overflow:hidden 整段裁掉。
+   副露是參考資訊、不需互動，縮小它最划算（兩排共省 46px）。 */
+@media (min-width:768px) and (min-height:721px) and (max-height:820px){
+  body:not(.is-mobile):not(.is-tablet) #om canvas,
+  body:not(.is-mobile):not(.is-tablet) #pm canvas{ width:40px !important; height:55px !important; }
+  body:not(.is-mobile):not(.is-tablet) #om,
+  body:not(.is-mobile):not(.is-tablet) #pm{ min-height:0 !important; }
+  /* .mlog 的高度由 applyScale() 以 inline style 設成 8vh，需 !important 才壓得下 */
+  body:not(.is-mobile):not(.is-tablet) .mlog{ max-height:34px !important; }
+}
+
+/* ── 直式共用：諸侯形勢由左側欄改為畫面最下方的橫條 ────────────────
+   直式垂直空間充裕（手機剩約 260px、iPad 剩約 290px），把側欄下移既補滿
+   空白，也讓手牌區拿回整個寬度；手機原本完全看不到諸侯形勢，這裡一併補回 */
+@media (pointer:coarse) and (hover:none) and (orientation:portrait) and (max-width:1024px){
+  .map{ flex-direction:column !important; gap:6px !important; }
+  .binfo{
+    order:2 !important; flex:0 0 auto !important; width:100% !important;
+    display:flex !important; flex-wrap:wrap !important; align-items:flex-start !important;
+    gap:4px 14px !important; padding:8px 12px !important;
+    overflow-y:auto !important; overscroll-behavior:contain;
+    /* max-height 由 _fitPortraitStrip() 以 inline style 設定，此處不可用 !important 蓋掉 */
+  }
+  .binfo h3{ width:100%; margin-bottom:2px !important; }
+  #olist{ display:flex !important; flex:1 1 100%; gap:4px !important; }
+  #olist .oe{
+    flex:1 1 0; flex-direction:column !important; gap:1px !important;
+    border-bottom:none !important; border:1px solid rgba(201,153,58,.15);
+    border-radius:4px; text-align:center; padding:4px 1px !important;
+    font-size:9px !important;
+  }
+  #olist .oc{ font-size:15px !important; }
+  #skill-badge{ flex:1 1 100%; margin-top:4px !important; }
+  /* 右下角的「⚙ 設定」是固定定位，會壓在特殊牌型清單最後一行上，留出讓位空間 */
+  .binfo > div:last-child{
+    flex:1 1 100%; margin-top:4px !important; padding-top:6px !important;
+    padding-right:104px !important;
+  }
+  #special-legend{ display:flex !important; flex-wrap:wrap; gap:1px 12px; font-size:9px !important; }
+  /* 牌桌（.mja）用自然高度、絕不被壓縮；底部橫條的可用高度由 JS 反推後內部捲動
+     （#game-screen 被 JS 設成 display:block，.map 的 flex:1 不生效，無法交給 flex 分配） */
+  .mja{ min-height:0 !important; }
+}
+
+/* ── ①-c 手機直式：手牌刻意 7×2 兩行，頭像改浮動圓章 ──────────────
+   直式寬度只有 375–393px，14 張單行的牌寬會掉到 17px，故改為每行 7 張。
+   牌寬由 _fitHandTiles() 依「每行 7 張」反推，flex-wrap 自然斷在第 7 張。 */
+@media (pointer:coarse) and (hover:none) and (orientation:portrait) and (max-width:500px){
+  #ph{ flex-wrap:wrap !important; }
+  .mja{
+    grid-template-columns:1fr !important;
+    grid-template-areas:"oz" "pb" "pz" "ab" "ml" !important;
+    column-gap:0 !important;
+  }
+  /* 牌山列加高並讓出右側，容納我方浮動頭像（直式垂直空間充裕）。
+     沒有 padding-right 的話「我方回合」徽章會被頭像壓住 */
+  .pb{ min-height:58px !important; padding-right:58px !important; align-items:center !important; }
+  #pp canvas{ width:14px !important; height:19px !important; }
+  #pp{ gap:1px !important; }
+  /* 敵方手牌與敵方副露避開右上角的對手頭像（右側保留 56px） */
+  #oh canvas{ width:22px !important; height:30px !important; }
+  #om canvas{ width:18px !important; height:25px !important; }
+  #pm canvas{ width:22px !important; height:30px !important; }
+  #oh,#om,#pm{ gap:1px !important; }
+  #om .mgap,#pm .mgap{ width:4px !important; }
+  /* 棄牌兩行（44 張剛好全裝得下），仍可捲動 */
+  #od,#pd{ max-height:46px !important; overflow-y:auto !important; gap:1px !important; }
+  #od canvas,#pd canvas{ width:15px !important; height:21px !important; }
+  #od{ padding-right:56px !important; }
+  .zl{ font-size:9px !important; margin-top:2px !important; margin-bottom:1px !important; }
+}
+
+/* ── ② 平板橫式（iPad）：君主立繪欄保留但縮到 170px ── */
+@media (pointer:coarse) and (hover:none) and (orientation:landscape)
+   and (min-height:501px) and (max-height:1024px){
+  #game-screen{
+    padding-left:max(8px, env(safe-area-inset-left)) !important;
+    padding-right:max(8px, env(safe-area-inset-right)) !important;
+  }
+  .mja{
+    grid-template-columns:1fr 170px !important;
+    column-gap:6px !important; row-gap:5px !important;
+  }
+  #player-avatar-frame,#opp-avatar-frame{ padding:6px 8px !important; gap:5px !important; }
+  #player-avatar-frame .king-avatar,
+  #opp-avatar-frame .king-avatar{ width:88% !important; }
+  #pp canvas{ width:20px !important; height:27px !important; }
+  #pp{ gap:2px !important; }
+  #oh canvas{ width:34px !important; height:47px !important; }
+  #oh{ gap:2px !important; }
+  #om canvas,#pm canvas{ width:34px !important; height:47px !important; }
+  #om,#pm{ gap:2px !important; }
+  /* 棄牌：兩行可捲（iPad 高度充裕） */
+  #od,#pd{ max-height:70px !important; overflow-y:auto !important; gap:2px !important; }
+  #od canvas,#pd canvas{ width:24px !important; height:33px !important; }
+}
+
+/* ── ②-b 矮螢幕平板橫式（短邊 501–700px 的小平板）── */
+@media (pointer:coarse) and (hover:none) and (orientation:landscape)
+   and (min-height:501px) and (max-height:700px){
+  /* iPad（834/744px 高）有 220px 以上餘裕，但短邊剛過 500 的小平板會差幾 px */
+  .mlog{ display:none !important; }
+  #od,#pd{ max-height:35px !important; }
+}
+
+/* ── ③ 平板直式（iPad）：側欄下移成橫條、頭像浮動 ── */
+@media (pointer:coarse) and (hover:none) and (orientation:portrait)
+   and (min-width:501px) and (max-width:1024px){
+  #game-screen{
+    padding-left:max(8px, env(safe-area-inset-left)) !important;
+    padding-right:max(8px, env(safe-area-inset-right)) !important;
+  }
+  #olist .oc{ font-size:20px !important; }
+  #special-legend{ gap:2px 16px !important; line-height:1.7 !important; }
+  /* 頭像浮動，手牌區全寬 */
+  .mja{
+    flex:1 1 auto !important; min-height:0 !important;
+    grid-template-columns:1fr !important;
+    grid-template-areas:"oz" "pb" "pz" "ab" "ml" !important;
+    column-gap:0 !important;
+  }
+  /* 我方浮動頭像 96px，牌山列需加高並讓出右側，否則會壓到 14 張單行手牌的最後一張 */
+  .pb{ min-height:104px !important; padding-right:106px !important; align-items:center !important; }
+  #pp canvas{ width:20px !important; height:27px !important; }
+  #pp{ gap:2px !important; }
+  #oh canvas{ width:32px !important; height:44px !important; }
+  #oh{ gap:3px !important; }
+  #om canvas,#pm canvas{ width:32px !important; height:44px !important; }
+  #om,#pm{ gap:3px !important; }
+  #od,#pd{ max-height:70px !important; overflow-y:auto !important; gap:2px !important; }
+  #od canvas,#pd canvas{ width:24px !important; height:33px !important; }
+  #od{ padding-right:106px !important; }
 }
 
 </style>
@@ -985,9 +1224,9 @@ canvas.tc.meld{cursor:default;}
           <span>敵方手牌</span>
         </div>
         <div class="tr" id="oh"></div>
-        <div class="zl" style="margin-top:5px;"><span>副露</span></div>
+        <div class="zl" style="margin-top:5px;" id="om-lbl"><span>副露</span></div>
         <div class="tr" id="om"></div>
-        <div class="zl" style="margin-top:3px;"><span>棄牌</span></div>
+        <div class="zl" style="margin-top:3px;"><span>棄牌</span><strong id="od-cnt"></strong></div>
         <div class="dr" id="od"></div>
       </div>
       <div id="opp-avatar-frame">
@@ -1011,10 +1250,10 @@ canvas.tc.meld{cursor:default;}
           <span>我方手牌（單擊選牌&nbsp;雙擊棄牌&nbsp;/&nbsp;數字鍵直接棄牌）</span>
         </div>
         <div class="tr" id="ph"></div>
-        <div class="zl" style="margin-top:5px;"><span>副露</span></div>
+        <div class="zl" style="margin-top:5px;" id="pm-lbl"><span>副露</span></div>
         <div class="tr" id="pm"></div>
         <div id="pd-zone">
-          <div class="zl" style="margin-top:3px;"><span>棄牌</span></div>
+          <div class="zl" style="margin-top:3px;"><span>棄牌</span><strong id="pd-cnt"></strong></div>
           <div class="dr" id="pd"></div>
         </div>
       </div>
@@ -1463,20 +1702,139 @@ function toggleFS(){
 function _updateFSBtn(){
   const btn = document.getElementById('fs-btn');
   if(!btn) return;
-  // 只在非 iOS 手機顯示（iOS 不支援 Fullscreen API，且 Safari PWA 已自動全螢幕）
-  btn.style.display = (_isMobile() && !_isIOS()) ? 'flex' : 'none';
+  // 只在非 iOS 的觸控裝置顯示（iOS 不支援 Fullscreen API，且 Safari PWA 已自動全螢幕）
+  btn.style.display = (_isTouchUI() && !_isIOS()) ? 'flex' : 'none';
   // 更新圖示
   document.getElementById('fs-icon').textContent = isFullscreen() ? '✕' : '⛶';
   document.getElementById('fs-label').textContent = isFullscreen() ? '離開' : '全螢幕';
 }
 
-// 觸控裝置 + 短邊 < 500px 即視為手機（橫式 iPhone 寬度可達 932px，不能只看寬度）
-const _isMobile = ()=> ('ontouchstart' in window || navigator.maxTouchPoints > 0)
-  && Math.min(window.innerWidth, window.innerHeight) < 500;
+/* ── 裝置分層（V1.27）──────────────────────────────────────────────
+   一律以「短邊」判斷，橫式 iPhone 寬度可達 932px、iPad 短邊 744–1024px，
+   只看寬度會把 iPad 判成桌機（V1.26 的問題根源：三段手機 media query 全部失效）。
+   閾值與樣式表中 max-height:500px / min-height:501px / max-width:1024px 對應。 */
+const _coarseUI = ()=> window.matchMedia('(pointer:coarse) and (hover:none)').matches
+  || (('ontouchstart' in window || navigator.maxTouchPoints > 0)
+      && !window.matchMedia('(hover:hover)').matches);
+const _shortSide = ()=> Math.min(window.innerWidth, window.innerHeight);
+const _isPhone   = ()=> _coarseUI() && _shortSide() <= 500;
+const _isTablet  = ()=> _coarseUI() && _shortSide() > 500 && _shortSide() <= 1024;
+const _isTouchUI = ()=> _isPhone() || _isTablet();
+// 舊呼叫點沿用：_isMobile 語意 =「手機」
+const _isMobile = _isPhone;
 // iOS 不支援 Fullscreen API，全螢幕按鈕對 iOS 無意義
 const _isIOS = ()=> /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const _isLandscape = ()=> window.innerWidth > window.innerHeight;
+
+/* ── 牌寬上下限與高度佔比（依裝置與方向）── */
+const TILE_LIMITS = {
+  phoneLand : {min:24, max:40, hRatio:0.150},
+  phonePort : {min:26, max:46, hRatio:0.140},
+  tabletLand: {min:30, max:56, hRatio:0.130},
+  tabletPort: {min:30, max:56, hRatio:0.085},
+};
+function _tileLimits(){
+  const land = _isLandscape();
+  if(_isPhone())  return land ? TILE_LIMITS.phoneLand  : TILE_LIMITS.phonePort;
+  if(_isTablet()) return land ? TILE_LIMITS.tabletLand : TILE_LIMITS.tabletPort;
+  // 桌機：上限與 V1.26 相同（1280×720 等小高度畫面降低上限避免被截）
+  // hRatio 0.176 = 原式 vh*0.18/1.4 換算成 vh*hRatio/1.37 的等效值
+  const vh = window.innerHeight;
+  return {min:32, max:(vh <= 720 ? 44 : vh <= 800 ? 52 : 64), hRatio:0.176};
+}
+
+/* ── 依 #ph 實測寬度反推牌寬（全裝置適用）─────────────────────────
+   V1.26 是用公式猜可用寬（手機只扣側欄 80 與內距、桌機只扣固定 220），
+   都漏算了 150–240px 的君主頭像欄 → 算出的牌寬放不下 14 張而靜靜換行：
+     iPhone 橫式 11+3、iPad 橫式 10+4、iPad 直式 7+7、桌機 1280×800 13+1。
+   改成量實際容器寬度，任何長寬比、任何裝置都不會再算錯。
+   回傳 true 表示牌寬有變動、呼叫端需重新繪製。 */
+const HAND_MAX = 14;   // 手牌上限（13 + 摸進的 1 張）
+/* 手機直式寬度僅 375–393px，14 張單行會壓到牌寬 17px（約 3mm，看不清也點不準），
+   因此直式刻意排成 7×2 兩行（牌寬 44px，比橫式的 40px 還大）。
+   牌寬按「每行張數」反推後，flex-wrap 自然就會斷在第 7 張。 */
+const _handPerRow = ()=> (_isPhone() && !_isLandscape()) ? 7 : HAND_MAX;
+function _fitHandTiles(){
+  const ph = document.getElementById('ph');
+  if(!ph) return false;
+  const avail = ph.clientWidth;
+  if(avail < 80) return false;                  // 標題／選國畫面尚未顯示，維持暫定值
+  const cs  = getComputedStyle(ph);
+  const gap = parseFloat(cs.columnGap || cs.gap) || 1;
+  const lim = _tileLimits();
+  const per = _handPerRow();
+  // 單張 canvas 實寬 = 牌寬 + SIDE + 2（3D 側邊）
+  const byW = Math.floor((avail - (per - 1) * gap) / per) - (SIDE + 2);
+  const byH = Math.floor((window.innerHeight * lim.hRatio) / 1.37);
+  const tw  = Math.max(lim.min, Math.min(byW, byH, lim.max));
+  if(tw === TW) return false;
+  TW = tw; TH = Math.round(tw * 1.37);
+  return true;
+}
+
+/* ── 直式底部橫條可用高度 ────────────────────────────────────────────
+   #game-screen 被 JS 設成 display:block（覆蓋 CSS 的 display:flex），
+   所以 .map 的 flex:1 不生效、高度只能靠內容撐開，橫條長就會頂穿畫面。
+   這裡以牌桌實際下緣反推剩餘高度，超出時讓橫條自己捲動。 */
+function _fitPortraitStrip(){
+  const strip = document.querySelector('.binfo');
+  const mja   = document.querySelector('.mja');
+  const game  = document.getElementById('game-screen');
+  if(!strip || !mja || !game) return;
+  const isStrip = _coarseUI() && !_isLandscape() && _shortSide() <= 1024;
+  // 非橫條模式一律不碰 maxHeight：桌機、平板橫式、手機橫式的側欄高度
+  // 都已由 applyScale() 的 sidebar 區塊設定（清掉會讓桌機側欄失去 vh-60 上限）
+  if(!isStrip) return;
+  const gr = game.getBoundingClientRect();
+  if(!gr.height) return;
+  const padB  = parseFloat(getComputedStyle(game).paddingBottom) || 0;
+  const avail = Math.floor(gr.bottom - padB - mja.getBoundingClientRect().bottom - 8);
+  if(avail < 40){
+    // 矮螢幕直式（iPhone SE 直式滿載時只剩 44px）：空間不足就整條收起，
+    // 底部資訊列仍會顯示國家與分數。CSS 端是 display:flex !important，需同樣以 important 覆蓋
+    strip.style.setProperty('display', 'none', 'important');
+    strip.style.maxHeight = '';
+    return;
+  }
+  strip.style.removeProperty('display');
+  strip.style.maxHeight = avail + 'px';
+}
+
+/* ── 手牌列高度：只有 #ph 需要預留整張牌高 ── */
+function _applyRowHeights(){
+  const vh = window.innerHeight;
+  const trExtra = _isTouchUI() ? 2 : (vh <= 720 ? 4 : 10);
+  document.querySelectorAll('.tr').forEach(r=>{
+    r.style.minHeight = (_isTouchUI() && r.id !== 'ph') ? '0px' : (TH + trExtra) + 'px';
+  });
+}
+
+/* ── 浮動頭像：定位到「敵方牌區右上」與「牌山列右側」──────────────
+   這兩處是滿牌狀態下右側仍然空著的位置（敵方手牌 13 張只佔約 300px、
+   牌山列只有文字），所以頭像疊上去不會壓到任何牌。 */
+function _placeFloatAvatars(){
+  const oav = document.getElementById('opp-avatar-frame');
+  const pav = document.getElementById('player-avatar-frame');
+  if(!oav || !pav) return;
+  if(!document.body.classList.contains('float-av')){
+    [oav,pav].forEach(el=>{ el.style.top=el.style.right=el.style.bottom=el.style.left=''; });
+    return;
+  }
+  const mja = document.querySelector('.mja');
+  if(!mja) return;
+  const d  = _isTablet() ? 96 : 50;
+  document.documentElement.style.setProperty('--av-d', d + 'px');
+  const r   = mja.getBoundingClientRect();
+  if(!r.height) return;
+  const ozr = document.getElementById('opp-zone')?.getBoundingClientRect();
+  const pbr = document.querySelector('.pb')?.getBoundingClientRect();
+  oav.style.right = '4px';
+  oav.style.top   = Math.max(2, (ozr ? ozr.top - r.top : 0) + 6) + 'px';
+  pav.style.right = '4px';
+  pav.style.top   = (pbr ? Math.round(pbr.top - r.top + pbr.height/2 - d/2)
+                         : Math.round(r.height/2 - d/2)) + 'px';
+}
 
 function applyScale(){
   const vw = window.innerWidth;
@@ -1484,11 +1842,17 @@ function applyScale(){
   const mobile = _isMobile();
   const landscape = _isLandscape();
 
-  // 手機模式套用/移除 CSS class
-  document.body.classList.toggle('is-mobile', mobile);
-  document.body.classList.toggle('is-landscape', landscape);
+  const tablet  = _isTablet();
+  const touchUI = mobile || tablet;
 
-  // Tile size
+  // 裝置 class（CSS 用）
+  document.body.classList.toggle('is-mobile', mobile);
+  document.body.classList.toggle('is-tablet', tablet);
+  document.body.classList.toggle('is-landscape', landscape);
+  // 浮動頭像：手機（橫式與直式）與平板直式——這些情況橫向吃緊，放不下 170–240px 的頭像欄
+  document.body.classList.toggle('float-av', mobile || (tablet && !landscape));
+
+  // Tile size（觸控裝置這裡只算暫定值，稍後由 _fitHandTiles() 依實測寬度定案）
   let playW, tileByW, tileByH, tileSize;
   if(mobile && !landscape){
     // 直式手機：牌寬 = 全寬 ÷ 14（14張手牌），最小28px
@@ -1506,6 +1870,13 @@ function applyScale(){
     tileByW = Math.floor((playW - 13) / 14) - (SIDE + 2);
     tileByH = Math.floor((vh * 0.15) / 1.37);
     tileSize = Math.max(26, Math.min(tileByW, tileByH, 40));
+  } else if(tablet){
+    // 平板：橫式扣君主欄 170 + 側欄 160 + 內距；直式側欄已下移成橫條
+    const lim = _tileLimits();
+    playW = vw - (landscape ? 170 + 160 + 40 : 40);
+    tileByW = Math.floor((playW - 13 * 3) / 14) - (SIDE + 2);
+    tileByH = Math.floor((vh * lim.hRatio) / 1.37);
+    tileSize = Math.max(lim.min, Math.min(tileByW, tileByH, lim.max));
   } else {
     // 桌機
     playW = vw - 220;
@@ -1532,8 +1903,8 @@ function applyScale(){
     game.style.position  = 'relative';
     game.style.left = game.style.top = '';
     game.style.width     = '100vw';
-    // 手機用實際視窗高度：iOS Safari 的 100vh 含網址列，會遮住底部手牌
-    game.style.height    = mobile ? vh + 'px' : '100vh';
+    // 觸控裝置用實際視窗高度：Safari 的 100vh 含網址列，會遮住底部手牌（iPad 同樣有此問題）
+    game.style.height    = touchUI ? vh + 'px' : '100vh';
     game.style.minHeight = '';
     const gamePad = (mobile && !landscape) ? Math.round(vh*0.004) : Math.round(vh*0.008);
     const gamePadB = (mobile && !landscape) ? 32 : Math.round(vh*0.008); // 直式留底部資訊列空間
@@ -1546,7 +1917,12 @@ function applyScale(){
   if(sidebar){
     if(mobile && landscape){
       // 橫式手機：sidebar CSS 已設 80px，只調 maxHeight
+      sidebar.style.flex = '';
       sidebar.style.maxHeight = (vh - 30) + 'px';
+    } else if(tablet){
+      // 平板橫式固定 160px（牌寬計算以此為準）；直式已由 CSS 改成底部橫條
+      sidebar.style.flex = landscape ? '0 0 160px' : '';
+      sidebar.style.maxHeight = landscape ? (vh - 60) + 'px' : 'none';
     } else if(!mobile){
       const sw = Math.max(130, Math.round(vw * 0.13));
       sidebar.style.flex = `0 0 ${sw}px`;
@@ -1554,21 +1930,33 @@ function applyScale(){
     }
   }
 
-  // Tile row min-height（手機無 hover 浮起，不需預留；小高度桌機減少預留）
-  const trExtra = mobile ? 2 : (vh <= 720 ? 4 : 10);
-  document.querySelectorAll('.tr').forEach(r=>{
-    r.style.minHeight = (TH + trExtra) + 'px';
-  });
+  // 牌寬定案：觸控裝置改用 #ph 實測寬度反推（須在版面 class 都套用後才量）
+  _fitHandTiles();
 
-  // Log height（小高度桌機縮小）
+  // Tile row min-height（觸控裝置只有 #ph 需預留整張牌高）
+  _applyRowHeights();
+
+  // Log height
   const logEl = document.querySelector('.mlog');
-  if(logEl) logEl.style.maxHeight = Math.round(vh * ((!mobile && vh <= 720) ? 0.04 : 0.08)) + 'px';
+  if(logEl){
+    let logH;
+    if(mobile)      logH = landscape ? 10 : Math.round(vh * 0.03);
+    else if(tablet) logH = landscape ? 50 : 44;
+    else            logH = Math.round(vh * (vh <= 720 ? 0.04 : 0.08));
+    logEl.style.maxHeight = logH + 'px';
+  }
+
+  // 浮動頭像定位
+  _placeFloatAvatars();
 
   // Redraw background
   resizeBG();
 
   // Re-render tiles if game is active
   if(typeof G !== 'undefined' && G.pH) renderAll();
+
+  // 直式底部橫條：牌桌重繪後才量得到最終高度
+  _fitPortraitStrip();
 
   // 更新全螢幕按鈕
   _updateFSBtn();
@@ -1594,6 +1982,23 @@ window.addEventListener('resize', onResize);
 document.addEventListener('fullscreenchange', ()=>{ setTimeout(applyScale,150); _updateFSBtn(); });
 document.addEventListener('webkitfullscreenchange', ()=>{ setTimeout(applyScale,150); _updateFSBtn(); });
 setTimeout(applyScale, 100);
+
+/* ── 手牌區寬度變動即重算牌寬（V1.27）────────────────────────────────
+   涵蓋：進入遊戲畫面（原本 display:none 量不到寬度）、旋轉螢幕、
+   iOS/iPadOS Safari 網址列收放、分割視窗（Split View）改變寬度。
+   只有牌寬真的改變才重繪，避免無窮迴圈。 */
+if(window.ResizeObserver){
+  const _handRO = new ResizeObserver(()=>{
+    if(_fitHandTiles()){
+      _applyRowHeights();
+      if(typeof G !== 'undefined' && G.pH) renderAll();
+    }
+    _placeFloatAvatars();
+    _fitPortraitStrip();
+  });
+  const _pz = document.getElementById('player-zone');
+  if(_pz) _handRO.observe(_pz);
+}
 
 /* ===================== PARTICLES ===================== */
 const pC=document.getElementById('part-canvas');
@@ -3618,6 +4023,11 @@ function renderMelds(){
   if(!G.pM||!G.oM) return;
   ['p','o'].forEach(who=>{
     const row=document.getElementById((who==='p'?'p':'o')+'m');row.innerHTML='';
+    // V1.27：沒有副露時整排（含標籤）收起，開局到第一次吃碰前多出約 57px 垂直空間
+    const empty=!(who==='p'?G.pM:G.oM).length;
+    const lbl=document.getElementById(who+'m-lbl');
+    row.style.display = empty ? 'none' : '';
+    if(lbl) lbl.style.display = empty ? 'none' : '';
     (who==='p'?G.pM:G.oM).forEach(m=>{
       m.tiles.forEach((t,i)=>{
         const hid=m.type==='kong_dark'&&(i===0||i===3);
@@ -3635,6 +4045,11 @@ function renderDiscs(){
   ['p','o'].forEach(who=>{
     const row=document.getElementById(who+'d');row.innerHTML='';
     const claimed = who==='p' ? claimedByPlayer : claimedByOpp; // 哪些被對方取走
+    // V1.27：棄牌排在觸控裝置限行數（手機 1 行、平板 2 行）並可捲動，
+    // 標籤右側顯示總張數，讓被捲出視野的牌有跡可循
+    const cnt=document.getElementById(who+'d-cnt');
+    const total=(who==='p'?G.pD:G.oD).length;
+    if(cnt) cnt.textContent = total ? total+' 張' : '';
     (who==='p'?G.pD:G.oD).forEach(t=>{
       const c=mkC(t,false,true,true);
       if(claimed.has(t.uid)){
@@ -7799,6 +8214,6 @@ function updateKingAvatars(){
   document.getElementById('boss-screen').addEventListener('click', _hideBoss);
 })();
 </script>
-<div id="ver-badge">V1.26</div>
+<div id="ver-badge">V1.27</div>
 </body>
 </html>
