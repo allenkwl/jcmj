@@ -958,6 +958,19 @@ body:not(.is-mobile):not(.is-tablet) #pd{
    直式垂直空間充裕（手機剩約 260px、iPad 剩約 290px），把側欄下移既補滿
    空白，也讓手牌區拿回整個寬度；手機原本完全看不到諸侯形勢，這裡一併補回 */
 @media (pointer:coarse) and (hover:none) and (orientation:portrait) and (max-width:1024px){
+  /* 上下各留約一個頭像圓框的直徑，牌桌不貼齊螢幕邊緣，同時避開瀏海／
+     Dynamic Island 與 Home indicator。
+     取 max(固定值, calc(基本內距 + env(...)))：只靠 env() 的話，PWA 未進入
+     standalone 或瀏覽器回傳 0 時留白就消失；只靠固定值則無瀏海機型會白吃空間。
+     必須用 !important —— max-width:767px 區塊的 padding:4px 3px !important 會蓋掉一般宣告；
+     並且要列出 body.is-mobile / body.is-tablet，才壓得過
+     body.is-mobile #game-screen{padding-bottom:32px !important} 的較高選擇器權重。 */
+  #game-screen,
+  body.is-mobile #game-screen,
+  body.is-tablet #game-screen{
+    padding-top:max(54px, calc(4px + env(safe-area-inset-top, 0px))) !important;
+    padding-bottom:max(58px, calc(32px + env(safe-area-inset-bottom, 0px))) !important;
+  }
   .map{ flex-direction:column !important; gap:6px !important; }
   .binfo{
     order:2 !important; flex:0 0 auto !important; width:100% !important;
@@ -985,6 +998,19 @@ body:not(.is-mobile):not(.is-tablet) #pd{
   /* 牌桌（.mja）用自然高度、絕不被壓縮；底部橫條的可用高度由 JS 反推後內部捲動
      （#game-screen 被 JS 設成 display:block，.map 的 flex:1 不生效，無法交給 flex 分配） */
   .mja{ min-height:0 !important; }
+}
+
+/* ── 矮螢幕直式（iPhone SE 直式僅 667px）────────────────────────────
+   滿載時牌桌本身就要 583px，再固定留 54+58px 會被裁掉，
+   故只做 env() 補償（此類機型多半也沒有瀏海）。 */
+@media (pointer:coarse) and (hover:none) and (orientation:portrait)
+   and (max-width:1024px) and (max-height:699px){
+  #game-screen,
+  body.is-mobile #game-screen,
+  body.is-tablet #game-screen{
+    padding-top:calc(4px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom:calc(32px + env(safe-area-inset-bottom, 0px)) !important;
+  }
 }
 
 /* ── ①-c 手機直式：手牌刻意 7×2 兩行，頭像改浮動圓章 ──────────────
@@ -1944,16 +1970,10 @@ function applyScale(){
     const gamePad = (mobile && !landscape) ? Math.round(vh*0.004) : Math.round(vh*0.008);
     const gamePadB = (mobile && !landscape) ? 32 : Math.round(vh*0.008); // 直式留底部資訊列空間
     const sidePad  = Math.round(vw*0.006);
-    if(touchUI && !landscape){
-      // 直式要避開瀏海／Dynamic Island 與 Home indicator。
-      // 橫式是用 CSS 的 padding-left/right + env() 處理，但這裡 JS 設的是 padding 簡寫、
-      // 會整個蓋掉 CSS，所以直接在 inline style 內用 calc() + env() 才可靠
-      game.style.padding = `calc(${gamePad}px + env(safe-area-inset-top, 0px)) `
-                         + `${sidePad}px `
-                         + `calc(${gamePadB}px + env(safe-area-inset-bottom, 0px))`;
-    } else {
-      game.style.padding = `${gamePad}px ${sidePad}px ${gamePadB}px`;
-    }
+    // 注意：觸控直式的上下內距由樣式表負責（見「直式共用」區塊）。
+    // 舊的 max-width:767px 區塊寫著 #game-screen{padding:4px 3px !important}，
+    // !important 會蓋掉這裡 inline 設的任何值，所以瀏海補償必須寫在 CSS 才有效。
+    game.style.padding = `${gamePad}px ${sidePad}px ${gamePadB}px`;
     game.style.overflow  = 'hidden';
   }
 
