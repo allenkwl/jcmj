@@ -971,6 +971,12 @@ body:not(.is-mobile):not(.is-tablet) #pd{
     padding-top:max(54px, calc(4px + env(safe-area-inset-top, 0px))) !important;
     padding-bottom:max(58px, calc(32px + env(safe-area-inset-bottom, 0px))) !important;
   }
+  /* 標題與選國畫面同樣要避開瀏海：#title-top 原本只有 32px、
+     #sel-content 只有 28px，都不足以讓開狀態列與 Dynamic Island。
+     #title-bot 是 margin-top:auto 貼齊底部，加大上方內距不會推掉「開始征途」 */
+  #title-top{ padding-top:max(58px, calc(32px + env(safe-area-inset-top, 0px))) !important; }
+  #title-bot{ padding-bottom:max(36px, calc(20px + env(safe-area-inset-bottom, 0px))) !important; }
+  #sel-content{ padding-top:max(58px, calc(28px + env(safe-area-inset-top, 0px))) !important; }
   .map{ flex-direction:column !important; gap:6px !important; }
   .binfo{
     order:2 !important; flex:0 0 auto !important; width:100% !important;
@@ -5906,6 +5912,8 @@ function backToTitle(){
   try{ resetTenpaiState(); } catch(e){}
   G = {};
   document.getElementById('title-screen').style.display = 'flex';
+  // 回標題必須同步底部資訊列，否則會殘留上一局的國家／對手／分數
+  try{ _updateMobileInfoBar(); } catch(e){}
   // 停止敗亡/遊戲BGM，切回主畫面音樂
   // 此時必有使用者點擊手勢，AudioContext 可安全啟動/恢復
   try{ BGM.play('title'); } catch(e){}
@@ -5925,8 +5933,15 @@ function _updateMobileInfoBar(){
   // 只在手機 + game-screen 可見時顯示
   const gameVisible = document.getElementById('game-screen')?.style.display !== 'none'
     && document.getElementById('game-screen')?.style.display !== '';
-  if(!_isMobile() || !gameVisible){
+  // 另加一道保險：G 被清空（回標題、尚未選國）時一律不顯示，
+  // 避免任何未來新增的畫面切換路徑忘記呼叫本函式而殘留舊資料
+  const hasGame = typeof G !== 'undefined' && G && G.playerK;
+  if(!_isMobile() || !gameVisible || !hasGame){
     bar.style.display = 'none';
+    // 一併清空內容，避免下次顯示的瞬間閃現上一局的國家與分數
+    ['mob-pk','mob-opp','mob-score'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.textContent = '';
+    });
     return;
   }
   bar.style.display = 'flex';
