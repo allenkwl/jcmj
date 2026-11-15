@@ -7239,6 +7239,68 @@ renderPH = function() {
   });
 };
 
+// ── V1.28：手機／iPad 按住手牌往上滑出去就打出（比照四人線上版 v1.84）──
+// 掛在 #ph 上（事件委派），手牌每次重畫都不必重掛。點兩下、棄牌鈕、數字鍵照舊。
+// 只滑一點點、橫著滑、沒輪到自己 → 不打，牌彈回原位。
+(function setupSwipeDiscard(){
+  const ph = document.getElementById('ph');
+  if(!ph) return;
+  // 觸控裝置沒有數字鍵：手牌標題改寫成觸控的出牌方式
+  try {
+    if(typeof _coarseUI === 'function' && _coarseUI()){
+      const s = [...document.querySelectorAll('span')].find(x => x.textContent.indexOf('單擊選牌') >= 0);
+      if(s) s.textContent = '我方手牌（點兩下或往上滑出牌）';
+    }
+  } catch(_) {}
+  let sw = null;   // { idx, wrap, x0, y0, dx, dy, mode:'up'|'other'|null, h }
+  const canPlay = () => typeof G !== 'undefined' && G && G.pTurn && G.phase === 'discard';
+  const need = s => Math.max(50, s.h * 0.8);   // 往上滑超過這麼遠才算打出
+  const reset = () => {
+    if(sw && sw.wrap){
+      const w = sw.wrap;
+      w.style.transition = 'transform .15s ease-out';
+      w.style.transform = ''; w.style.opacity = '';
+      setTimeout(() => { w.style.transition = ''; }, 170);
+    }
+    sw = null;
+  };
+  ph.addEventListener('touchstart', e => {
+    if(e.touches.length !== 1){ reset(); return; }
+    const c = e.target && e.target.closest ? e.target.closest('canvas') : null;
+    if(!c || !ph.contains(c) || !canPlay()) return;
+    const wrap = c.closest('.ph-tile-wrap');
+    const idx = wrap ? parseInt(String(wrap.id).replace('ph-wrap-', ''), 10) : NaN;
+    if(isNaN(idx)) return;
+    const t = e.touches[0];
+    sw = { idx, wrap, x0: t.clientX, y0: t.clientY, dx: 0, dy: 0, mode: null, h: c.getBoundingClientRect().height || 60 };
+  }, { passive: true });
+  ph.addEventListener('touchmove', e => {
+    if(!sw) return;
+    const t = e.touches[0];
+    sw.dx = t.clientX - sw.x0; sw.dy = t.clientY - sw.y0;
+    if(!sw.mode){
+      if(Math.abs(sw.dx) < 8 && Math.abs(sw.dy) < 8) return;
+      sw.mode = (sw.dy < 0 && -sw.dy > Math.abs(sw.dx) * 1.2) ? 'up' : 'other';
+    }
+    if(sw.mode !== 'up') return;
+    e.preventDefault();                       // 往上滑時不要捲動頁面
+    const up = Math.max(0, -sw.dy);
+    sw.wrap.style.transform = 'translate(' + (sw.dx * 0.3) + 'px,' + (-up) + 'px)';
+    sw.wrap.style.opacity = up >= need(sw) ? '.7' : '';
+  }, { passive: false });
+  ph.addEventListener('touchend', e => {
+    if(!sw) return;
+    const s = sw;
+    const ok = s.mode === 'up' && -s.dy >= need(s) && canPlay() && s.idx < G.pH.length;
+    if(!ok){ reset(); return; }
+    sw = null;
+    e.preventDefault();                       // 不要再補一個 click（會變成點選別張牌）
+    G.sel = s.idx;
+    doDiscard();
+  }, { passive: false });
+  ph.addEventListener('touchcancel', reset);
+})();
+
 // Hint sound: patch doHint
 const _origDoHint = doHint;
 doHint = function() {
@@ -7945,7 +8007,7 @@ function updateKingAvatars(){
 <script>
 (function(){
   // BUILD_TS 會在每次存檔時自動更新，讓 SW 知道要清除舊快取
-  const BUILD_TS = '20260719_1536';
+  const BUILD_TS = '20261115_1350';
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
@@ -8302,6 +8364,6 @@ function updateKingAvatars(){
   document.getElementById('boss-screen').addEventListener('click', _hideBoss);
 })();
 </script>
-<div id="ver-badge">V1.27</div>
+<div id="ver-badge">V1.28</div>
 </body>
 </html>

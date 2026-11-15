@@ -1,6 +1,6 @@
 // 麻將戰國列傳 — Service Worker
 // 策略：HTML 永遠從網路取得（保證最新版），靜態資源快取加速
-// BUILD: 20260719_1536
+// BUILD: 20261115_1350
 const CACHE_NAME = 'jcmj-v5';
 
 // 只快取不常變動的靜態資源
@@ -38,21 +38,25 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(event.request.url);
 
-  // HTML 文件：永遠走網路，失敗時才用快取（保證更新能到達使用者）
+  // HTML 文件：走網路，失敗時才用快取
   if (event.request.destination === 'document' ||
       url.pathname.endsWith('.html') ||
       url.pathname === '/jcmj/' ||
       url.pathname === '/jcmj') {
-    // cache: 'reload' 繞過瀏覽器 HTTP cache，確保真正從伺服器取得最新版
+    // V1.28：拿掉 cache:'reload'。主檔 12 MB（壓縮後 9 MB），原本每次開都整包重抓，
+    // iPad 從主畫面開會黑畫面等很久。現在照一般 HTTP 快取：10 分鐘內直接用，
+    // 之後用 ETag 問伺服器 —— 沒改版只回 304（幾百位元組），有改版才下載新的。
     event.respondWith(
-      fetch(new Request(event.request, { cache: 'reload' })).then(response => {
-        const toCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, toCache));
+      fetch(event.request).then(response => {
+        if (response && response.ok) {
+          const toCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, toCache));
+        }
         return response;
-      }).catch(() => {
-        // 離線時才用快取
-        return caches.match(event.request) || caches.match('/jcmj/');
-      })
+      }).catch(() =>
+        // 離線時才用快取（舊寫法 `caches.match(a) || caches.match(b)` 永遠只走前者：Promise 一定是真值）
+        caches.match(event.request).then(r => r || caches.match('/jcmj/'))
+      )
     );
     return;
   }
